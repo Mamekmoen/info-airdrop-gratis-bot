@@ -21,19 +21,26 @@ const TEXT = {
 };
 
 let offset = 0;
-async function api(method, body) {
+async function api(method, body, ms) {
   const r = await fetch(API + '/' + method, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(body || {}),
+    signal: AbortSignal.timeout(ms || 15000),
   });
   return r.json();
 }
 async function loop() {
   console.log('Bot Info Airdrop Gratis jalan...');
+  // Tes koneksi + token di awal: kalau gagal, keluar biar Altare restart.
+  try {
+    const me = await api('getMe', {}, 15000);
+    if (!me.ok) { console.error('getMe gagal:', JSON.stringify(me)); process.exit(1); }
+    console.log('Bot terhubung: @' + me.result.username);
+  } catch (e) { console.error('getMe error:', e.message); process.exit(1); }
   while (true) {
     try {
-      const data = await api('getUpdates', { offset, timeout: 30 });
+      const data = await api('getUpdates', { offset, timeout: 30 }, 35000);
       if (data.ok && data.result) {
         for (const u of data.result) {
           offset = u.update_id + 1;
